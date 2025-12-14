@@ -10,6 +10,7 @@ from app.database import get_db
 from app.services.config_service import config_service
 from app.core.config import settings
 from app.core.ai_providers import AIModel
+from app.services.api_key_service import api_key_service
 
 router = APIRouter()
 
@@ -79,16 +80,6 @@ async def create_config(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/{config_name}")
-async def get_config(
-    config_name: str,
-    user_id: Optional[str] = None,
-    db: AsyncSession = Depends(get_db)
-):
-    """Get a configuration by name"""
-    config = await config_service.get_config(config_name, user_id, db)
-    return config
-
 @router.get("/")
 async def list_configs(
     user_id: Optional[str] = None,
@@ -114,3 +105,34 @@ async def list_configs(
         }
         for c in configs
     ]
+
+class APIKeyUpdateRequest(BaseModel):
+    openai_key: Optional[str] = None
+    anthropic_key: Optional[str] = None
+
+@router.get("/api-keys")
+async def get_api_keys_status():
+    """Get API keys status (masked)"""
+    return api_key_service.get_api_keys_status()
+
+@router.put("/api-keys")
+async def update_api_keys(request: APIKeyUpdateRequest):
+    """Update API keys"""
+    try:
+        result = api_key_service.update_api_keys(
+            openai_key=request.openai_key,
+            anthropic_key=request.anthropic_key
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update API keys: {str(e)}")
+
+@router.get("/{config_name}")
+async def get_config(
+    config_name: str,
+    user_id: Optional[str] = None,
+    db: AsyncSession = Depends(get_db)
+):
+    """Get a configuration by name"""
+    config = await config_service.get_config(config_name, user_id, db)
+    return config

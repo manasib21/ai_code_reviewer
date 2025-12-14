@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Save, Plus, Trash2 } from 'lucide-react'
+import { Save, Plus, Trash2, Key, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Config {
@@ -28,10 +28,67 @@ export default function Config() {
   })
   const [newPattern, setNewPattern] = useState('')
   const [newRule, setNewRule] = useState('')
+  const [apiKeys, setApiKeys] = useState({
+    openai: '',
+    anthropic: '',
+  })
+  const [apiKeysStatus, setApiKeysStatus] = useState({
+    openai_configured: false,
+    anthropic_configured: false,
+    openai_preview: null as string | null,
+    anthropic_preview: null as string | null,
+  })
+  const [showKeys, setShowKeys] = useState({ openai: false, anthropic: false })
+  const [loadingKeys, setLoadingKeys] = useState(true)
 
   useEffect(() => {
     loadConfigs()
+    loadAPIKeysStatus()
   }, [])
+
+  const loadAPIKeysStatus = async () => {
+    try {
+      const response = await fetch('/api/v1/config/api-keys')
+      if (!response.ok) throw new Error('Failed to load API keys status')
+      const data = await response.json()
+      setApiKeysStatus(data)
+    } catch (error) {
+      console.error(error)
+      toast.error('Failed to load API keys status')
+    } finally {
+      setLoadingKeys(false)
+    }
+  }
+
+  const updateAPIKeys = async () => {
+    if (!apiKeys.openai && !apiKeys.anthropic) {
+      toast.error('Please enter at least one API key')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/v1/config/api-keys', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          openai_key: apiKeys.openai || null,
+          anthropic_key: apiKeys.anthropic || null,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Failed to update API keys' }))
+        throw new Error(errorData.detail || 'Failed to update API keys')
+      }
+
+      const result = await response.json()
+      toast.success(result.message || 'API keys updated! Please restart the backend.')
+      setApiKeys({ openai: '', anthropic: '' })
+      loadAPIKeysStatus()
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update API keys')
+    }
+  }
 
   const loadConfigs = async () => {
     try {
@@ -113,10 +170,90 @@ export default function Config() {
     <div className="page-container">
       <div className="page-header">
         <h1>Configuration</h1>
-        <p>Manage review settings and custom rules</p>
+        <p>Manage review settings, custom rules, and API keys</p>
       </div>
 
+      {/* API Keys Section */}
+      <div className="config-form" style={{ marginBottom: '30px' }}>
+        <h2 style={{ marginBottom: '20px', color: '#2c3e50', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Key size={24} />
+          API Keys
+        </h2>
+        <p style={{ color: '#7f8c8d', marginBottom: '20px', fontSize: '14px' }}>
+          Update your API keys here. Changes will require a backend restart to take effect.
+        </p>
+
+        {loadingKeys ? (
+          <p>Loading API keys status...</p>
+        ) : (
+          <>
+            <div className="form-group">
+              <label>OpenAI API Key</label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  type={showKeys.openai ? 'text' : 'password'}
+                  value={apiKeys.openai}
+                  onChange={(e) => setApiKeys({ ...apiKeys, openai: e.target.value })}
+                  placeholder={apiKeysStatus.openai_configured ? `Current: ${apiKeysStatus.openai_preview}` : 'Enter OpenAI API key (sk-...)'}
+                  className="api-key-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKeys({ ...showKeys, openai: !showKeys.openai })}
+                  className="btn-icon"
+                  style={{ minWidth: '40px' }}
+                >
+                  {showKeys.openai ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {apiKeysStatus.openai_configured && (
+                <p style={{ fontSize: '12px', color: '#27ae60', marginTop: '4px' }}>
+                  ✓ OpenAI key is configured
+                </p>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label>Anthropic API Key</label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  type={showKeys.anthropic ? 'text' : 'password'}
+                  value={apiKeys.anthropic}
+                  onChange={(e) => setApiKeys({ ...apiKeys, anthropic: e.target.value })}
+                  placeholder={apiKeysStatus.anthropic_configured ? `Current: ${apiKeysStatus.anthropic_preview}` : 'Enter Anthropic API key'}
+                  className="api-key-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKeys({ ...showKeys, anthropic: !showKeys.anthropic })}
+                  className="btn-icon"
+                  style={{ minWidth: '40px' }}
+                >
+                  {showKeys.anthropic ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {apiKeysStatus.anthropic_configured && (
+                <p style={{ fontSize: '12px', color: '#27ae60', marginTop: '4px' }}>
+                  ✓ Anthropic key is configured
+                </p>
+              )}
+            </div>
+
+            <button onClick={updateAPIKeys} className="btn-primary">
+              <Save size={18} />
+              Update API Keys
+            </button>
+
+            <div style={{ marginTop: '15px', padding: '12px', background: '#fff3cd', borderRadius: '6px', fontSize: '13px', color: '#856404' }}>
+              <strong>Note:</strong> After updating API keys, you need to restart the backend server for changes to take effect.
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Review Configuration Section */}
       <div className="config-form">
+        <h2 style={{ marginBottom: '20px', color: '#2c3e50' }}>Review Configuration</h2>
         <div className="form-group">
           <label>Configuration Name</label>
           <input
