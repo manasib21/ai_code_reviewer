@@ -1,0 +1,59 @@
+# Example configuration file for AI Code Review Tool
+
+# Minimum severity level to report
+min_severity: low  # Options: low, medium, high, critical
+
+# Files and patterns to ignore
+ignore_patterns:
+  - node_modules
+  - .git
+  - __pycache__
+  - "*.pyc"
+  - "*.min.js"
+  - dist
+  - build
+  - "*.log"
+  - ".env"
+
+# Custom prompt for AI review (optional)
+# Leave empty to use default prompt
+custom_prompt: |
+  Review the code focusing on:
+  1. Security vulnerabilities
+  2. Performance issues
+  3. Code maintainability
+
+# Custom coding standards (language-specific)
+coding_standards:
+  python:
+    max_line_length: 100
+    require_type_hints: true
+    require_docstrings: true
+  javascript:
+    use_strict: true
+    prefer_const: true
+    no_var: true
+
+# Custom rules (additional checks)
+custom_rules:
+  - "Check for hardcoded credentials"
+  - "Verify error handling"
+  - "Ensure proper logging"
+
+# Default AI model
+default_model: gpt-4  # Options: gpt-4, gpt-3.5-turbo, claude-3-sonnet-20240229
+
+# Review settings
+review_settings:
+  # Enable learning mode (explain issues)
+  learning_mode: true
+  
+  # Include code suggestions
+  include_suggestions: true
+  
+  # Review documentation
+  review_documentation: true
+  
+  # Review code style
+  review_style: true
+

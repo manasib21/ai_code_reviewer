@@ -1,0 +1,25 @@
+stages:
+  - review
+
+code-review:
+  stage: review
+  image: python:3.11
+  before_script:
+    - pip install -r backend/requirements.txt
+    - cd backend && python main.py &
+    - sleep 5
+  script:
+    - python ci-cd/review-mr.py
+      --api-url http://localhost:8000
+      --gitlab-token $GITLAB_TOKEN
+      --project-id $CI_PROJECT_ID
+      --mr-iid $CI_MERGE_REQUEST_IID
+  artifacts:
+    when: always
+    paths:
+      - review-report.html
+    reports:
+      junit: review-results.xml
+  only:
+    - merge_requests
+

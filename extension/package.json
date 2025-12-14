@@ -1,0 +1,84 @@
+{
+  "name": "ai-code-review",
+  "displayName": "AI Code Review",
+  "description": "AI-powered code review tool for VS Code",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:aiCodeReview.reviewFile",
+    "onCommand:aiCodeReview.reviewSelection",
+    "onCommand:aiCodeReview.reviewWorkspace"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aiCodeReview.reviewFile",
+        "title": "Review Current File"
+      },
+      {
+        "command": "aiCodeReview.reviewSelection",
+        "title": "Review Selection"
+      },
+      {
+        "command": "aiCodeReview.reviewWorkspace",
+        "title": "Review Workspace"
+      },
+      {
+        "command": "aiCodeReview.viewHistory",
+        "title": "View Review History"
+      },
+      {
+        "command": "aiCodeReview.openConfig",
+        "title": "Open Configuration"
+      }
+    ],
+    "configuration": {
+      "title": "AI Code Review",
+      "properties": {
+        "aiCodeReview.apiUrl": {
+          "type": "string",
+          "default": "http://localhost:8000",
+          "description": "API URL for code review service"
+        },
+        "aiCodeReview.model": {
+          "type": "string",
+          "default": "gpt-4",
+          "enum": [
+            "gpt-4",
+            "gpt-4-turbo-preview",
+            "gpt-3.5-turbo",
+            "claude-3-opus-20240229",
+            "claude-3-sonnet-20240229",
+            "claude-3-haiku-20240307"
+          ],
+          "description": "AI model to use for reviews"
+        },
+        "aiCodeReview.autoReview": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically review on save"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "axios": "^1.6.2"
+  }
+}
+

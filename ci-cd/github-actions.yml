@@ -1,0 +1,48 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  code-review:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        cd backend
+        pip install -r requirements.txt
+    
+    - name: Start API server
+      run: |
+        cd backend
+        python main.py &
+        sleep 5
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    
+    - name: Run code review
+      run: |
+        python ci-cd/review-pr.py \
+          --api-url http://localhost:8000 \
+          --github-token ${{ secrets.GITHUB_TOKEN }} \
+          --pr-number ${{ github.event.pull_request.number }}
+    
+    - name: Upload review report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: code-review-report
+        path: review-report.html
+
